@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Panel de administración</title>
-<link rel="icon" type="image/png" href="Admin-logo.png">
-<link rel="apple-touch-icon" href="Admin-logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#08070C;--bg2:#0F0D16;--bg3:#161221;--tx:#F4F2F7;--tx2:#9A94A6;--ac:#9D6BFF;--ln:1px solid rgba(255,255,255,.10);--pad:clamp(1rem,4vw,3rem)}
@@ -199,12 +197,6 @@ button:disabled{opacity:.35;cursor:default;pointer-events:none}
         <div class="btns" style="margin-top:.4rem"><button type="button" data-a="add-s">+ Agregar red</button><button class="pri">Guardar perfil</button></div>
       </div>
     </form>
-    <form class="panel one" id="f-cloud">
-      <div><p class="eyebrow" style="margin-bottom:.4rem">Cloudinary (subida de imágenes)</p>
-      <p class="mut" style="margin-bottom:1rem;font-size:13px">Sin esto, las imágenes se comprimen y se guardan directo en la base de datos (límite de ~1 MB por imagen). Con Cloudinary se suben a la nube. Usa un upload preset de tipo <i>unsigned</i>.</p>
-      <div class="fields"><label>Cloud name<input id="k-name"></label><label>Upload preset<input id="k-preset"></label>
-      <div class="btns"><button class="pri">Guardar Cloudinary</button></div></div></div>
-    </form>
   </section>
   <!-- ACCESOS (solo dueño) -->
   <section data-s="accesos" hidden>
@@ -253,7 +245,7 @@ const dflt=k=>SITE==='portafolio'?DEF[k]:k==='profile'?{whatsapp:'',photo:'',soc
 async function loadAdmins(){C.admins=(await getDocs(collection(db,'admins'))).docs.map(d=>({email:d.id,...d.data()}))}
 async function loadAll(){
   for(const k of ['works','photos','events'])C[k]=(await getDocs(collection(db,...P(k)))).docs.map(d=>d.data());
-  for(const k of ['collective','profile','cloud']){const s=await getDoc(doc(db,...(k==='cloud'?['site','cloud']:P('site',k))));C[k]=s.exists()?s.data():structuredClone(dflt(k))}
+  for(const k of ['collective','profile']){const s=await getDoc(doc(db,...(k==='cloud'?['site','cloud']:P('site',k))));C[k]=s.exists()?s.data():structuredClone(dflt(k))}
   try{const sc=await getDoc(doc(db,...P('site','sections')));C.sections=sc.exists()?sc.data().list||[]:[]}
   catch(e){console.error(e);C.sections=[];setTimeout(()=>toast('No se pudieron leer las secciones ('+(e.code||e.message)+'). Revisa las reglas de Firestore.'),800)}
   await loadAdmins()}
@@ -266,13 +258,10 @@ const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Se
 $('#e-mon').innerHTML=MES.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
 
 /* SUBIDA DE IMÁGENES */
-const cloud=()=>C.cloud||{};
-const shrink=f=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const s=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.8))};im.onerror=()=>no(new Error('Imagen no válida'));im.src=URL.createObjectURL(f)});
-async function upload(f){const c=cloud();
-  if(c.name&&c.preset){const fd=new FormData();fd.append('file',f);fd.append('upload_preset',c.preset);
-    const r=await fetch(`https://api.cloudinary.com/v1_1/${c.name}/image/upload`,{method:'POST',body:fd}),j=await r.json();
-    if(!j.secure_url)throw new Error(j.error?.message||'Falló Cloudinary');return j.secure_url}
-  return shrink(f)}
+const shrink=f=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const s=Math.min(1,1200/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  let q=.82,d=c.toDataURL('image/jpeg',q);while(d.length>450000&&q>.4){q-=.08;d=c.toDataURL('image/jpeg',q)} // baja la calidad hasta que pese poco
+  d.length>900000?no(new Error('La imagen es demasiado pesada')):ok(d)};im.onerror=()=>no(new Error('Imagen no válida'));im.src=URL.createObjectURL(f)});
+const upload=f=>shrink(f); // las imágenes se comprimen y se guardan dentro de Firestore
 const pend={};
 function bindImg(inp,prev,key){inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{toast('Subiendo imagen…');pend[key]=await upload(f);prev.src=pend[key];prev.hidden=false;toast('Imagen lista')}catch(e){toast('Error: '+e.message)}}}
 const showPrev=(p,src)=>{p.src=src||'';p.hidden=!src};
@@ -398,7 +387,7 @@ $('#f-ev').onsubmit=e=>{e.preventDefault();
 /* PERFIL Y REDES */
 const socRow=(s={})=>`<div class="soc"><input placeholder="Nombre (Instagram)" value="${esc(s.name)}" data-n><input placeholder="https://…" value="${esc(s.url)}" data-u><button type="button" data-a="d-s" aria-label="Quitar">✕</button></div>`;
 function renderPer(){const p=get('profile');$('#f-wa').value=p.whatsapp;showPrev($('#f-prev'),p.photo);pend.f=null;
-  $('#socs').innerHTML=p.socials.map(socRow).join('');const c=cloud();$('#k-name').value=c.name||'';$('#k-preset').value=c.preset||''}
+  $('#socs').innerHTML=p.socials.map(socRow).join('');}
 /* Recortador circular */
 function cropper(file){return new Promise((ok,no)=>{const img=new Image();
   img.onload=()=>{const M=$('#crop'),cv=$('#crop-cv'),ctx=cv.getContext('2d'),S=320,z=$('#crop-z');
@@ -425,7 +414,6 @@ $('#f-per').onsubmit=async e=>{e.preventDefault();const p=get('profile');
   const d={whatsapp:$('#f-wa').value.replace(/\D/g,''),photo:pend.f||p.photo,socials};C.profile=d;
   try{await setDoc(doc(db,...P('site','profile')),d);toast('Perfil guardado en Firestore '+(d.photo?'(con foto)':'(SIN foto)'))}
   catch(er){console.error(er);toast('Error al guardar: '+(er.code||er.message))}};
-$('#f-cloud').onsubmit=e=>{e.preventDefault();set('cloud',{name:$('#k-name').value.trim(),preset:$('#k-preset').value.trim()});toast('Cloudinary guardado')};
 
 /* ACCIONES */
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id,up=()=>scrollTo({top:0,behavior:'smooth'});
