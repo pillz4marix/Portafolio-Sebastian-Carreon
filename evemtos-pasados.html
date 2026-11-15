@@ -181,6 +181,9 @@ footer button:hover{color:var(--ac)}
 .yrh{font-family:var(--display);font-weight:700;font-size:clamp(1.8rem,3.4vw,2.8rem);color:var(--ac);margin:3rem 0 1rem;display:flex;align-items:baseline;gap:1rem}
 .yrh small{font:500 11px var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--tx2)}
 .yrh+.row{border-top:var(--ln)}
+.fly{display:block;margin-top:.9rem;width:96px;aspect-ratio:3/4;border:var(--ln);overflow:hidden;cursor:zoom-in;background:var(--bg3)}
+.fly img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.fly:hover img{transform:scale(1.06)}.fly:hover{border-color:var(--ac)}
 .chip{display:inline-block;font:500 10.5px var(--ui);letter-spacing:.16em;border:var(--ln);padding:.15rem .6rem;margin-left:.7rem;color:var(--tx2);vertical-align:middle}
 </style>
 </head>
@@ -202,6 +205,16 @@ footer button:hover{color:var(--ac)}
   <span>Ilustración · Diseño · Dirección de arte</span>
   <button id="top">Volver arriba ↑</button>
 </footer>
+<!-- LIGHTBOX -->
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Flyer ampliado">
+  <button class="close" id="lb-close" aria-label="Cerrar">✕</button>
+  <span></span>
+  <figure>
+    <img id="lb-img" alt="">
+    <figcaption><p class="eyebrow" id="lb-meta"></p><h3 id="lb-title"></h3><p id="lb-desc"></p></figcaption>
+  </figure>
+  <span></span>
+</div>
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {getFirestore,collection,getDocs} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
@@ -219,7 +232,7 @@ function build(events, now){
   if (!past.length) return '<p class="empty">Aún no hay eventos pasados.</p>';
   const by = new Map(); past.forEach(e => { if (!by.has(e.year)) by.set(e.year, []); by.get(e.year).push(e); });
   const row = e => { const inner = `<div class="day">${String(e.day).padStart(2,'0')}<span class="mon">${MESES[e.month-1]}</span></div>
-      <div><h3>${esc(e.title)}${e.tag ? `<span class="chip">${esc(e.tag)}</span>` : ''}</h3><p>${esc([e.place, e.time].filter(Boolean).join(' · '))}</p>${e.desc ? `<p style="margin-top:.4rem">${esc(e.desc)}</p>` : ''}</div>`;
+      <div><h3>${esc(e.title)}${e.tag ? `<span class="chip">${esc(e.tag)}</span>` : ''}</h3><p>${esc([e.place, e.time].filter(Boolean).join(' · '))}</p>${e.desc ? `<p style="margin-top:.4rem">${esc(e.desc)}</p>` : ''}${e.flyer ? `<span class="fly" role="button" tabindex="0" data-t="${esc(e.title)}" data-m="${esc([e.place, e.time].filter(Boolean).join(' · '))}" data-y="${esc(e.year)}" aria-label="Ver flyer de ${esc(e.title)}"><img src="${esc(e.flyer)}" alt="Flyer: ${esc(e.title)}" loading="lazy"></span>` : ''}</div>`;
     return e.link ? `<a class="row" href="${esc(url(e.link))}" target="_blank" rel="noopener">${inner}<span class="circ" aria-label="Ver más">↗</span></a>` : `<div class="row">${inner}<span></span></div>`; };
   return [...by].map(([y,l]) => `<h2 class="yrh">${y}<small>${l.length} ${l.length === 1 ? 'evento' : 'eventos'}</small></h2>${l.map(row).join('')}`).join('');
 }
@@ -227,6 +240,17 @@ try { const snap = await getDocs(collection(db, 'events')); $('#plist').innerHTM
 catch (e) { console.error(e); $('#plist').innerHTML = '<p class="empty">No se pudieron cargar los eventos.</p>'; }
 $('#yr').textContent = new Date().getFullYear();
 $('#top').onclick = () => scrollTo({top:0, behavior:'smooth'});
+
+/* Flyer ampliado */
+const lb = $('#lb'), closeLb = () => { lb.classList.remove('open'); document.body.style.overflow = ''; };
+const openFly = f => { const i = f.querySelector('img'); $('#lb-img').src = i.src; $('#lb-img').alt = i.alt;
+  $('#lb-meta').textContent = ['Flyer', f.dataset.y].filter(Boolean).join(' · '); $('#lb-title').textContent = f.dataset.t || ''; $('#lb-desc').textContent = f.dataset.m || '';
+  lb.classList.add('open'); document.body.style.overflow = 'hidden'; };
+$('#plist').addEventListener('click', e => { const f = e.target.closest('.fly'); if (!f) return; e.preventDefault(); e.stopPropagation(); openFly(f); });
+$('#plist').addEventListener('keydown', e => { const f = e.target.closest('.fly'); if (f && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openFly(f); } });
+$('#lb-close').onclick = closeLb;
+lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && lb.classList.contains('open')) closeLb(); });
 </script>
 </body>
 </html>

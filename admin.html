@@ -180,6 +180,9 @@ button:disabled{opacity:.35;cursor:default;pointer-events:none}
           <label style="grid-column:span 2">Modalidad<select id="e-tag"><option>Presencial</option><option>Gratuito</option><option>Taller</option></select></label>
           <label style="grid-column:span 2">Enlace opcional<input id="e-link" type="url" placeholder="https://"></label>
           <label class="w">Descripción completa<textarea id="e-desc"></textarea></label>
+          <div style="grid-column:1/-1"><p class="eyebrow" style="margin-bottom:.5rem">Flyer del evento (opcional)</p>
+            <div class="drop" style="max-width:220px"><span>Toca para elegir el flyer</span><img id="e-prev" hidden alt="" style="object-fit:contain;background:var(--bg3)"><input type="file" id="e-file" accept="image/*"></div>
+            <button type="button" id="e-rmfly" hidden style="margin-top:.6rem">Quitar flyer</button></div>
           <div class="btns"><button class="pri">Guardar evento</button><button type="button" id="e-cancel" hidden>Cancelar edición</button></div>
         </div></form>
         <div class="list" id="l-ev"></div>
@@ -376,14 +379,18 @@ $('#p-file').onchange=async e=>{const fs=[...e.target.files];if(!fs.length)retur
   e.target.value='';renderCol()};
 
 /* Eventos */
-let ee=null;
+let ee=null,rmFly=false;
+const updFly=()=>{$('#e-rmfly').hidden=!(pend.e||(ee?.flyer&&!rmFly))};
 const sortEv=l=>l.sort((a,b)=>new Date(a.year,a.month-1,a.day)-new Date(b.year,b.month-1,b.day));
 function renderEv(){const l=sortEv(get('events').filter(v=>eSec(v)===CUR));
-  $('#l-ev').innerHTML=l.length?l.map(v=>`<div class="it" style="grid-template-columns:64px 1fr auto"><div class="ph" style="display:grid;place-items:center;font-weight:600">${v.day}<br>${MES[v.month-1].slice(0,3)}</div><div><b>${esc(v.title)}</b><small>${esc(v.place)} · ${esc(v.time)} · ${esc(v.tag)} · ${v.year}</small></div><span><button data-a="e-e" data-id="${v.id}">Editar</button><button data-a="d-e" data-id="${v.id}">Eliminar</button></span></div>`).join(''):'<p class="mut">No hay eventos en esta sección. Agrega el primero arriba.</p>'}
-function resetEv(){ee=null;$('#f-ev').reset();$('#e-year').value=new Date().getFullYear();$('#e-cancel').hidden=true}
+  $('#l-ev').innerHTML=l.length?l.map(v=>`<div class="it" style="grid-template-columns:64px 1fr auto"><div class="ph" style="display:grid;place-items:center;font-weight:600">${v.day}<br>${MES[v.month-1].slice(0,3)}</div><div><b>${esc(v.title)}</b><small>${esc(v.place)} · ${esc(v.time)} · ${esc(v.tag)} · ${v.year}${v.flyer?' · con flyer':''}</small></div><span><button data-a="e-e" data-id="${v.id}">Editar</button><button data-a="d-e" data-id="${v.id}">Eliminar</button></span></div>`).join(''):'<p class="mut">No hay eventos en esta sección. Agrega el primero arriba.</p>'}
+function resetEv(){ee=null;rmFly=false;pend.e=null;showPrev($('#e-prev'));updFly();$('#f-ev').reset();$('#e-year').value=new Date().getFullYear();$('#e-cancel').hidden=true}
 $('#e-cancel').onclick=resetEv;
+bindImg($('#e-file'),$('#e-prev'),'e');
+$('#e-file').addEventListener('change',()=>{rmFly=false;setTimeout(updFly,50)});
+$('#e-rmfly').onclick=()=>{pend.e=null;rmFly=true;$('#e-file').value='';showPrev($('#e-prev'));updFly()};
 $('#f-ev').onsubmit=e=>{e.preventDefault();
-  const it={id:ee?.id||crypto.randomUUID(),section:CUR,day:+$('#e-day').value,month:+$('#e-mon').value,year:+$('#e-year').value,title:$('#e-title').value.trim(),place:$('#e-place').value.trim(),time:$('#e-time').value,desc:$('#e-desc').value.trim(),tag:$('#e-tag').value,link:$('#e-link').value.trim()};
+  const it={id:ee?.id||crypto.randomUUID(),section:CUR,day:+$('#e-day').value,month:+$('#e-mon').value,year:+$('#e-year').value,title:$('#e-title').value.trim(),place:$('#e-place').value.trim(),time:$('#e-time').value,desc:$('#e-desc').value.trim(),tag:$('#e-tag').value,link:$('#e-link').value.trim(),flyer:rmFly?'':(pend.e||ee?.flyer||'')};
   if(upsert('events',it)){set('events',sortEv(get('events')));toast(ee?'Evento actualizado':'Evento guardado');resetEv();renderEv()}};
 
 /* PERFIL Y REDES */
@@ -429,7 +436,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   if(a==='e-o'){const w=get('works').find(x=>x.id===id);eo=w;pend.o=null;$('#o-cat').value=w.cat;$('#o-title').value=w.title;$('#o-year').value=w.year;$('#o-desc').value=w.desc;showPrev($('#o-prev'),w.img);$('#o-cancel').hidden=false;up()}
   if(a==='d-o'&&confirm('¿Eliminar esta obra?')){del('works',id);renderObras();toast('Obra eliminada')}
   if(a==='d-p'&&confirm('¿Eliminar esta foto?')){del('photos',id);renderCol()}
-  if(a==='e-e'){const v=get('events').find(x=>x.id===id);ee=v;$('#e-day').value=v.day;$('#e-mon').value=v.month;$('#e-year').value=v.year;$('#e-time').value=v.time;$('#e-title').value=v.title;$('#e-place').value=v.place;$('#e-tag').value=v.tag;$('#e-link').value=v.link;$('#e-desc').value=v.desc;$('#e-cancel').hidden=false;up()}
+  if(a==='e-e'){const v=get('events').find(x=>x.id===id);ee=v;$('#e-day').value=v.day;$('#e-mon').value=v.month;$('#e-year').value=v.year;$('#e-time').value=v.time;$('#e-title').value=v.title;$('#e-place').value=v.place;$('#e-tag').value=v.tag;$('#e-link').value=v.link;$('#e-desc').value=v.desc;rmFly=false;pend.e=null;showPrev($('#e-prev'),v.flyer);updFly();$('#e-cancel').hidden=false;up()}
   if(a==='d-e'&&confirm('¿Eliminar este evento?')){del('events',id);renderEv();toast('Evento eliminado')}
   if(a==='add-s')$('#socs').insertAdjacentHTML('beforeend',socRow());
   if(a==='add-c')$('#s-cats').insertAdjacentHTML('beforeend',catRow());

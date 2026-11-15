@@ -141,6 +141,10 @@ section{padding:clamp(4rem,9vw,8rem) var(--pad);border-top:var(--ln)}
 .circ{width:52px;height:52px;border:var(--ln);border-radius:50%;display:grid;place-items:center;transition:.25s}
 .row:hover .circ{background:var(--ac);border-color:var(--ac)}
 .evd{margin-top:1rem;color:var(--tx2);max-width:24em;font-size:15px}
+.fly{display:block;margin-top:.9rem;width:96px;aspect-ratio:3/4;border:var(--ln);overflow:hidden;cursor:zoom-in;position:relative;background:var(--bg3)}
+.fly img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.fly:hover img{transform:scale(1.06)}
+.fly:hover{border-color:var(--ac)}
 
 /* CONTACTO */
 .contact{text-align:center;padding-block:clamp(5rem,12vw,10rem)}
@@ -376,10 +380,14 @@ function buildSection(s, i, all){
   } else if (s.type === 'events'){
     const up = all.events.filter(e => (e.section || 'eventos') === s.id && new Date(e.year, e.month-1, e.day+1) >= new Date());
     const row = e => { const inner = `<div class="day">${String(e.day).padStart(2,'0')}<span class="mon">${MESES[e.month-1]}</span></div>
-        <div><h3>${esc(e.title)}</h3><p>${esc([e.place, e.time].filter(Boolean).join(' · '))}</p>${e.desc ? `<p style="margin-top:.4rem">${esc(e.desc)}</p>` : ''}</div>`;
+        <div><h3>${esc(e.title)}</h3><p>${esc([e.place, e.time].filter(Boolean).join(' · '))}</p>${e.desc ? `<p style="margin-top:.4rem">${esc(e.desc)}</p>` : ''}${e.flyer ? `<span class="fly" role="button" tabindex="0" data-fly="${esc(e.id)}" aria-label="Ver flyer de ${esc(e.title)}"><img src="${esc(e.flyer)}" alt="Flyer: ${esc(e.title)}" loading="lazy"></span>` : ''}</div>`;
       return e.link ? `<a class="row" href="${esc(url(e.link))}" target="_blank" rel="noopener">${inner}<span class="circ" aria-label="Ver evento">↗</span></a>` : `<div class="row">${inner}<span></span></div>`; };
     el.innerHTML = `<div class="ev"><div><p class="eyebrow">${esc(s.eyebrow || '')}</p><h2 class="display">${esc(s.title)}</h2>${s.desc ? `<p class="evd">${esc(s.desc)}</p>` : ''}</div>
       <div>${up.length ? up.map(row).join('') : '<p class="empty">Próximamente, nuevas fechas.</p>'}</div></div>`;
+    el.querySelectorAll('.fly').forEach(f => { const e = up.find(x => x.id === f.dataset.fly); if(!e) return;
+      const open = ev => { ev.preventDefault(); ev.stopPropagation(); openLightbox([{img:e.flyer, title:e.title, catName:'Flyer', year:e.year, desc:[e.place, e.time].filter(Boolean).join(' · ')}], 0); };
+      f.addEventListener('click', open);
+      f.addEventListener('keydown', ev => { if(ev.key==='Enter' || ev.key===' ') open(ev); }); });
   } else return null;
   return el;
 }
