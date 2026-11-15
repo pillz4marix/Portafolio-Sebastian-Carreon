@@ -195,7 +195,7 @@ footer button:hover{color:var(--ac)}
     <p class="sub">Ilustrador &amp; Diseñador gráfico</p>
     <p class="bio">Creo universos visuales donde lo oscuro, lo sensible y lo experimental encuentran una voz propia.</p>
     <div class="social" id="social"></div>
-    <a class="explore" id="explore" href="#secs" hidden>Explorar trabajo <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M5 13l7 7 7-7"/></svg></a>
+    <a class="explore" id="explore" href="#secs">Explorar trabajo <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M5 13l7 7 7-7"/></svg></a>
   </div>
   <div class="hero-r">
     <div class="pframe">
@@ -396,7 +396,6 @@ async function init(){
   const msg = encodeURIComponent('Hola Sebastián, vi tu portafolio y me gustaría cotizar un proyecto.');
   $('#hablemos').href = `https://wa.me/${profile.whatsapp}?text=${msg}`;
 
-  $('#explore').hidden = !secs.length;
 
   // Menú
   const nav = secs.filter(s => s.nav);
