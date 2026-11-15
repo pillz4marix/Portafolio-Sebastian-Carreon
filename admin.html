@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Panel de administración</title>
+<link rel="icon" type="image/png" href="Admin-logo.png">
+<link rel="apple-touch-icon" href="Admin-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08070C;--bg2:#0F0D16;--bg3:#161221;--tx:#F4F2F7;--tx2:#9A94A6;--ac:#9D6BFF;--ln:1px solid rgba(255,255,255,.10);--pad:clamp(1rem,4vw,3rem)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:400 15px/1.5 'Plus Jakarta Sans',sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:var(--ln);padding:.55rem 1rem;font-size:12px;letter-spacing:.12em;text-transform:uppercase;transition:.2s}
+button:hover{border-color:var(--ac);color:var(--ac)}
+button.pri{background:var(--ac);border-color:var(--ac);color:#08070C;font-weight:600}
+button.pri:hover{color:#08070C;opacity:.85}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+[hidden]{display:none!important}
+.disp{font-family:'Cinzel Decorative',serif;font-weight:900;text-transform:uppercase;letter-spacing:-.02em}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ac);font-weight:600}
+.mut{color:var(--tx2)}
+/* login */
+#login{min-height:100vh;display:grid;place-items:center;padding:1.5rem}
+#f-login{width:min(100%,380px);display:grid;gap:1rem;padding:2rem;background:var(--bg2);border:var(--ln)}
+#f-login h1{font-size:1.8rem}
+/* app */
+.top{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:1rem;padding:.9rem var(--pad);background:rgba(8,7,12,.85);backdrop-filter:blur(12px);border-bottom:var(--ln)}
+.top .sp{flex:1}
+.tabs{display:flex;flex-wrap:wrap;gap:.4rem}
+.tabs button.on{background:var(--bg3);border-color:var(--ac);color:var(--tx)}
+main{padding:2rem var(--pad) 5rem;max-width:1100px;margin:auto}
+h2{font-size:1.9rem;margin:.4rem 0 1.4rem}
+.panel{display:grid;grid-template-columns:220px 1fr;gap:1.6rem;padding:1.4rem;background:var(--bg2);border:var(--ln);margin-bottom:2rem}
+.panel.one{grid-template-columns:1fr}
+.drop{position:relative;aspect-ratio:3/4;background:var(--bg3);border:1px dashed rgba(255,255,255,.25);display:grid;place-items:center;text-align:center;color:var(--tx2);font-size:12px;overflow:hidden}
+.drop.wide{aspect-ratio:16/10}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-content:start}
+label{display:grid;gap:.35rem;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tx2)}
+label.w,.btns{grid-column:1/-1}
+input,select,textarea{background:var(--bg);border:var(--ln);padding:.65rem .8rem;font-size:14px;letter-spacing:0;text-transform:none;width:100%}
+textarea{min-height:90px;resize:vertical}
+.btns{display:flex;gap:.6rem;flex-wrap:wrap}
+.list{display:grid;gap:.6rem}
+.it{display:grid;grid-template-columns:64px 1fr auto;gap:1rem;align-items:center;padding:.6rem;border:var(--ln);background:var(--bg2)}
+.it img,.it .ph{width:64px;height:64px;object-fit:cover;background:var(--bg3)}
+.it small{display:block;color:var(--tx2);font-size:12px}
+.it span{display:flex;gap:.4rem}
+.soc{display:grid;grid-template-columns:1fr 2fr auto;gap:.6rem;margin-bottom:.6rem}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.6rem}
+.gal div{position:relative}.gal img{width:100%;aspect-ratio:1;object-fit:cover}
+.gal button{position:absolute;right:4px;top:4px;background:rgba(8,7,12,.85);padding:.2rem .5rem}
+#toast{position:fixed;bottom:1.4rem;left:50%;transform:translate(-50%,20px);background:var(--ac);color:#08070C;padding:.7rem 1.2rem;font-weight:600;font-size:13px;opacity:0;pointer-events:none;transition:.3s;z-index:20}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#crop{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(8,7,12,.92);padding:1rem}
+.cbox{display:grid;gap:1rem;justify-items:center;padding:1.4rem;background:var(--bg2);border:var(--ln)}
+.cwrap{position:relative;width:320px;height:320px;overflow:hidden;touch-action:none}
+.cwrap::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 400px rgba(8,7,12,.7);border:1px solid rgba(255,255,255,.5);pointer-events:none}
+#crop-cv{display:block;cursor:grab}
+.cbox label{width:100%}
+button:disabled{opacity:.35;cursor:default;pointer-events:none}
+.tag2{display:inline-block;margin-left:.5rem;padding:.1rem .5rem;border:var(--ln);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--tx2)}
+@media(max-width:760px){.panel{grid-template-columns:1fr}.drop{aspect-ratio:16/10}.fields{grid-template-columns:1fr}.it{grid-template-columns:48px 1fr}.it img,.it .ph{width:48px;height:48px}.it span{grid-column:1/-1}.soc{grid-template-columns:1fr}}
+#site-sel{width:auto;padding:.45rem .8rem;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <form id="f-login">
+    <p class="eyebrow">Panel de administración</p>
+    <h1 class="disp" id="l-title">Acceso</h1>
+    <label>Correo<input id="l-mail" type="email" required autocomplete="username"></label>
+    <label>Contraseña<input id="l-pass" type="password" required minlength="6" autocomplete="current-password"></label>
+    <button class="pri" id="l-btn">Entrar</button>
+  </form>
+</div>
+
+<!-- APP -->
+<div id="app" hidden>
+  <header class="top">
+    <b class="disp">Admin</b><select id="site-sel" aria-label="Sitio a editar"><option value="portafolio">Sebastián Carreón</option><option value="kapta">KAPTA</option></select>
+    <nav class="tabs" id="tabs">
+      <button data-t="secciones" class="on">Secciones</button><button data-t="perfil">Perfil y redes</button><button data-t="accesos" id="tab-acc" hidden>Accesos</button>
+    </nav>
+    <span class="sp"></span>
+    <a id="ver" href="index.html" target="_blank" class="mut" style="font-size:12px;color:inherit">Ver sitio ↗</a>
+    <button id="backup">Respaldo</button><button id="logout">Salir</button>
+  </header>
+
+  <main>
+  <!-- SECCIONES -->
+  <section data-s="secciones">
+    <!-- Lista y creación -->
+    <div id="v-list">
+      <p class="eyebrow">Contenido del sitio</p><h2 class="disp">Secciones</h2>
+      <form class="panel one" id="f-new"><div class="fields">
+        <label class="w">Tipo de sección<select id="n-type">
+          <option value="gallery">Galería de obras: imágenes con título, año, descripción y categorías</option>
+          <option value="featured">Proyecto destacado: portada, descripción y galería de fotos</option>
+          <option value="events">Agenda de eventos: fecha, lugar, hora y enlace</option>
+        </select></label>
+        <label>Título<input id="n-title" required placeholder="Ej. Ilustración"></label>
+        <label>Etiqueta superior (opcional)<input id="n-eb" placeholder="Ej. Obra seleccionada"></label>
+        <label class="w">Descripción corta (opcional)<textarea id="n-desc"></textarea></label>
+        <div class="btns"><button class="pri">Crear sección</button></div>
+      </div></form>
+      <div class="list" id="l-secs"></div>
+      <div class="btns" style="margin-top:1rem"><button type="button" id="imp" hidden>Importar secciones anteriores</button></div>
+      <p class="mut" style="margin-top:1rem;font-size:13px">El orden de esta lista es el orden en que aparecen en el sitio, debajo del inicio y antes de Contacto. Al importar las secciones anteriores se recuperan Ilustración, Diseño gráfico, Colectivo Umbra y Próximos eventos con todo su contenido.</p>
+    </div>
+
+    <!-- Editor de una sección -->
+    <div id="v-ed" hidden>
+      <button type="button" id="back" style="margin-bottom:1rem">← Todas las secciones</button>
+      <p class="eyebrow" id="ed-ty"></p><h2 class="disp" id="ed-t"></h2>
+      <form class="panel one" id="f-sec"><div class="fields">
+        <label>Título<input id="s-title" required></label>
+        <label>Texto del menú (vacío = no aparece en el menú)<input id="s-nav"></label>
+        <label>Etiqueta superior<input id="s-eb"></label>
+        <label class="w">Descripción<textarea id="s-desc"></textarea></label>
+        <div id="s-cats-w" style="grid-column:1/-1">
+          <p class="eyebrow" style="margin-bottom:.4rem">Categorías (pestañas de filtro)</p>
+          <p class="mut" style="margin-bottom:.8rem;font-size:13px">Opcional. Si agregas categorías, el sitio muestra pestañas para filtrar las obras. Si no, se ve una sola galería.</p>
+          <div id="s-cats"></div>
+          <div class="btns" style="margin-top:.4rem"><button type="button" data-a="add-c">+ Agregar categoría</button></div>
+        </div>
+        <div class="btns"><button class="pri">Guardar sección</button></div>
+      </div></form>
+
+      <!-- Tipo: galería -->
+      <div id="ed-gallery" hidden>
+        <p class="eyebrow" style="margin-bottom:.8rem">Obras de esta sección</p>
+        <form class="panel" id="f-obra">
+          <div class="drop"><span>Toca para elegir imagen</span><img id="o-prev" hidden alt=""><input type="file" id="o-file" accept="image/*"></div>
+          <div class="fields">
+            <label>Título<input id="o-title" required></label>
+            <label>Año<input id="o-year" type="number" min="1990" max="2100"></label>
+            <label class="w" id="o-cat-w">Categoría<select id="o-cat"></select></label>
+            <label class="w">Descripción (opcional)<textarea id="o-desc"></textarea></label>
+            <div class="btns"><button class="pri">Guardar obra</button><button type="button" id="o-cancel" hidden>Cancelar edición</button></div>
+          </div>
+        </form>
+        <div class="list" id="l-obras"></div>
+      </div>
+
+      <!-- Tipo: proyecto destacado -->
+      <div id="ed-featured" hidden>
+        <p class="eyebrow" style="margin-bottom:.8rem">Proyecto destacado</p>
+        <form class="panel" id="f-col">
+          <div class="drop wide"><span>Portada</span><img id="c-prev" hidden alt=""><input type="file" id="c-file" accept="image/*"></div>
+          <div class="fields">
+            <label>Título<input id="c-title" required></label>
+            <label>Etiqueta de la portada<input id="c-tag"></label>
+            <label class="w">Descripción<textarea id="c-desc"></textarea></label>
+            <label class="w">Enlace del botón «Conocer el proyecto» (opcional)<input id="c-link" placeholder="https://"></label>
+            <div class="btns"><button class="pri">Guardar proyecto</button></div>
+          </div>
+        </form>
+        <p class="eyebrow" style="margin-bottom:.8rem">Galería de fotos</p>
+        <label style="margin-bottom:1rem">Agregar fotos (puedes elegir varias)<input type="file" id="p-file" accept="image/*" multiple></label>
+        <div class="gal" id="l-fotos"></div>
+      </div>
+
+      <!-- Tipo: eventos -->
+      <div id="ed-events" hidden>
+        <p class="eyebrow" style="margin-bottom:.8rem">Eventos de esta sección</p>
+        <form class="panel one" id="f-ev"><div class="fields" style="grid-template-columns:repeat(4,1fr)">
+          <label>Día<input id="e-day" type="number" min="1" max="31" required></label>
+          <label>Mes<select id="e-mon"></select></label>
+          <label>Año<input id="e-year" type="number" min="2020" max="2100" required></label>
+          <label>Hora<input id="e-time" type="time"></label>
+          <label style="grid-column:span 2">Título<input id="e-title" required></label>
+          <label style="grid-column:span 2">Lugar<input id="e-place"></label>
+          <label style="grid-column:span 2">Modalidad<select id="e-tag"><option>Presencial</option><option>Gratuito</option><option>Taller</option></select></label>
+          <label style="grid-column:span 2">Enlace opcional<input id="e-link" type="url" placeholder="https://"></label>
+          <label class="w">Descripción completa<textarea id="e-desc"></textarea></label>
+          <div class="btns"><button class="pri">Guardar evento</button><button type="button" id="e-cancel" hidden>Cancelar edición</button></div>
+        </div></form>
+        <div class="list" id="l-ev"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERFIL -->
+  <section data-s="perfil" hidden>
+    <p class="eyebrow">Sitio principal</p><h2 class="disp">Perfil y redes</h2>
+    <form class="panel" id="f-per">
+      <div class="drop" style="aspect-ratio:1;border-radius:50%"><span>Foto de perfil</span><img id="f-prev" hidden alt=""><input type="file" id="f-file" accept="image/*"></div>
+      <div>
+        <label style="margin-bottom:1.2rem">WhatsApp del botón HABLEMOS. (con lada del país, solo números)<input id="f-wa" inputmode="numeric" placeholder="526145472043"></label>
+        <p class="eyebrow" style="margin-bottom:.6rem">Redes sociales</p>
+        <div id="socs"></div>
+        <div class="btns" style="margin-top:.4rem"><button type="button" data-a="add-s">+ Agregar red</button><button class="pri">Guardar perfil</button></div>
+      </div>
+    </form>
+    <form class="panel one" id="f-cloud">
+      <div><p class="eyebrow" style="margin-bottom:.4rem">Cloudinary (subida de imágenes)</p>
+      <p class="mut" style="margin-bottom:1rem;font-size:13px">Sin esto, las imágenes se comprimen y se guardan directo en la base de datos (límite de ~1 MB por imagen). Con Cloudinary se suben a la nube. Usa un upload preset de tipo <i>unsigned</i>.</p>
+      <div class="fields"><label>Cloud name<input id="k-name"></label><label>Upload preset<input id="k-preset"></label>
+      <div class="btns"><button class="pri">Guardar Cloudinary</button></div></div></div>
+    </form>
+  </section>
+  <!-- ACCESOS (solo dueño) -->
+  <section data-s="accesos" hidden>
+    <p class="eyebrow">Solo el dueño</p><h2 class="disp">Accesos</h2>
+    <form class="panel one" id="f-acc"><div class="fields" style="grid-template-columns:2fr 2fr 1fr">
+      <label>Correo<input id="a-mail" type="email" required></label>
+      <label>Contraseña inicial<input id="a-pass" type="text" minlength="6" required></label>
+      <label>Rol<select id="a-role"><option value="editor">Editor</option><option value="owner">Dueño</option></select></label>
+      <div class="btns"><button class="pri">Crear acceso</button></div>
+    </div></form>
+    <div class="list" id="l-acc"></div>
+    <p class="mut" style="margin-top:1rem;font-size:13px">Al quitar un acceso, esa persona ya no puede entrar al panel ni modificar nada.</p>
+  </section>
+  </main>
+</div>
+<div id="crop" hidden><div class="cbox">
+  <p class="eyebrow">Recorta tu foto</p>
+  <div class="cwrap"><canvas id="crop-cv" width="320" height="320"></canvas></div>
+  <label>Zoom (arrastra la foto para moverla)<input type="range" id="crop-z"></label>
+  <div class="btns"><button class="pri" id="crop-ok" type="button">Usar foto</button><button id="crop-no" type="button">Cancelar</button></div>
+</div></div>
+<div id="toast" role="status"></div>
+
+<script type="module">
+import {initializeApp,deleteApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged,createUserWithEmailAndPassword} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {getFirestore,doc,getDoc,getDocs,setDoc,deleteDoc,collection} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+const firebaseConfig={apiKey:"AIzaSyDncIc3NG5DbeW1ZIU-Ntnid0opCrRi6pg",authDomain:"psebastian-4eb78.firebaseapp.com",projectId:"psebastian-4eb78",storageBucket:"psebastian-4eb78.firebasestorage.app",messagingSenderId:"885448194791",appId:"1:885448194791:web:187b6ec783807230db4042"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const C={};
+const SITES={portafolio:{name:"Sebastián Carreón",url:"index.html"},kapta:{name:"KAPTA",url:"kapta.html"}};
+let SITE=localStorage.getItem("av_site")==="kapta"?"kapta":"portafolio";
+const P=(...s)=>SITE==="portafolio"?s:["sites",SITE,...s]; // portafolio = rutas originales; KAPTA = sites/kapta/...
+
+/* CAPA DE DATOS */
+const DEF={works:[],photos:[],sections:[],cloud:{},
+ collective:{title:'Materia Oscura',tag:'Exhibición colectiva 2026',cover:'',desc:'Una muestra colectiva sobre identidad, memoria y transformación con más de 30 estudiantes participantes.'},
+ events:[],
+ profile:{whatsapp:'526145472043',photo:'',socials:[{id:'s1',name:'Instagram',url:'https://instagram.com/'},{id:'s2',name:'Behance',url:'https://behance.net/'},{id:'s3',name:'TikTok',url:'https://tiktok.com/'},{id:'s4',name:'Pinterest',url:'https://pinterest.com/'},{id:'s5',name:'ArtStation',url:'https://artstation.com/'}]}};
+const get=k=>structuredClone(C[k]??DEF[k]);
+const fail=e=>toast('No se pudo guardar: '+(e.code||e.message));
+const set=(k,v)=>{C[k]=v;if(!Array.isArray(v))setDoc(doc(db,...(k==='cloud'?['site','cloud']:P('site',k))),v).catch(fail);return true};
+const upsert=(k,it)=>{const l=get(k),i=l.findIndex(x=>x.id===it.id);i>=0?l[i]=it:l.push(it);C[k]=l;setDoc(doc(db,...P(k,it.id)),it).catch(fail);return true};
+const del=(k,id)=>{C[k]=get(k).filter(x=>x.id!==id);deleteDoc(doc(db,...P(k,id))).catch(fail);return true};
+const dflt=k=>SITE==='portafolio'?DEF[k]:k==='profile'?{whatsapp:'',photo:'',socials:[]}:k==='collective'?{title:'',tag:'',cover:'',desc:''}:DEF[k];
+async function loadAdmins(){C.admins=(await getDocs(collection(db,'admins'))).docs.map(d=>({email:d.id,...d.data()}))}
+async function loadAll(){
+  for(const k of ['works','photos','events'])C[k]=(await getDocs(collection(db,...P(k)))).docs.map(d=>d.data());
+  for(const k of ['collective','profile','cloud']){const s=await getDoc(doc(db,...(k==='cloud'?['site','cloud']:P('site',k))));C[k]=s.exists()?s.data():structuredClone(dflt(k))}
+  try{const sc=await getDoc(doc(db,...P('site','sections')));C.sections=sc.exists()?sc.data().list||[]:[]}
+  catch(e){console.error(e);C.sections=[];setTimeout(()=>toast('No se pudieron leer las secciones ('+(e.code||e.message)+'). Revisa las reglas de Firestore.'),800)}
+  await loadAdmins()}
+
+/* UTILIDADES */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),5000)};
+const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+$('#e-mon').innerHTML=MES.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+
+/* SUBIDA DE IMÁGENES */
+const cloud=()=>C.cloud||{};
+const shrink=f=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const s=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.8))};im.onerror=()=>no(new Error('Imagen no válida'));im.src=URL.createObjectURL(f)});
+async function upload(f){const c=cloud();
+  if(c.name&&c.preset){const fd=new FormData();fd.append('file',f);fd.append('upload_preset',c.preset);
+    const r=await fetch(`https://api.cloudinary.com/v1_1/${c.name}/image/upload`,{method:'POST',body:fd}),j=await r.json();
+    if(!j.secure_url)throw new Error(j.error?.message||'Falló Cloudinary');return j.secure_url}
+  return shrink(f)}
+const pend={};
+function bindImg(inp,prev,key){inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{toast('Subiendo imagen…');pend[key]=await upload(f);prev.src=pend[key];prev.hidden=false;toast('Imagen lista')}catch(e){toast('Error: '+e.message)}}}
+const showPrev=(p,src)=>{p.src=src||'';p.hidden=!src};
+
+/* LOGIN */
+let ROLE='editor';
+$('#f-login').onsubmit=async e=>{e.preventDefault();
+  try{await signInWithEmailAndPassword(auth,$('#l-mail').value.trim(),$('#l-pass').value)}catch(er){console.error(er);toast(er.code==='auth/invalid-credential'?'Correo o contraseña incorrectos':'Error: '+er.code)}};
+$('#logout').onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async u=>{
+  if(!u){$('#login').hidden=false;$('#app').hidden=true;return}
+  try{const s=await getDoc(doc(db,'admins',u.email.toLowerCase()));
+    if(!s.exists())throw {code:'permission-denied'};
+    ROLE=s.data().role||'editor';await loadAll();enter()}
+  catch(er){await signOut(auth);console.error(er);toast(er.code==='permission-denied'?'Sin acceso. Crea en Firestore el documento admins/'+u.email.toLowerCase()+' (con role=owner) y publica las reglas':'Error al iniciar: '+(er.code||er.message))}});
+function enter(){$('#login').hidden=true;$('#app').hidden=false;$('#tab-acc').hidden=ROLE!=='owner';renderAll()}
+
+/* ACCESOS */
+async function crearAcceso(em,pw,role){
+  const sec=initializeApp(firebaseConfig,'sec'+Date.now()),a2=getAuth(sec);
+  try{await createUserWithEmailAndPassword(a2,em,pw)}catch(e){if(e.code!=='auth/email-already-in-use')throw e}
+  await signOut(a2);await deleteApp(sec);
+  await setDoc(doc(db,'admins',em),{role,addedBy:auth.currentUser.email,createdAt:Date.now()})}
+function renderAcc(){const me=auth.currentUser?.email.toLowerCase();
+  $('#l-acc').innerHTML=(C.admins||[]).map(a=>`<div class="it" style="grid-template-columns:1fr auto"><div><b>${esc(a.email)}</b><small>${a.role==='owner'?'Dueño':'Editor'}</small></div><span>${a.email===me?'<small>Tu cuenta</small>':`<button data-a="d-a" data-id="${esc(a.email)}">Quitar acceso</button>`}</span></div>`).join('')}
+$('#f-acc').onsubmit=async e=>{e.preventDefault();const em=$('#a-mail').value.trim().toLowerCase();
+  try{toast('Creando acceso…');await crearAcceso(em,$('#a-pass').value,$('#a-role').value);$('#f-acc').reset();await loadAdmins();renderAcc();toast('Acceso creado')}
+  catch(er){toast('Error: '+(er.code||er.message))}};
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-a="d-a"]');
+  if(!b||!confirm('¿Quitar el acceso de '+b.dataset.id+'?'))return;
+  try{await deleteDoc(doc(db,'admins',b.dataset.id));await loadAdmins();renderAcc();toast('Acceso eliminado')}catch(er){toast('Error: '+(er.code||er.message))}});
+
+/* RESPALDO */
+$('#backup').onclick=()=>{const d={fecha:new Date().toISOString(),works:C.works,photos:C.photos,events:C.events,sections:C.sections,collective:C.collective,profile:C.profile};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));
+  a.download='respaldo-'+SITE+'-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+
+/* PESTAÑAS */
+$('#tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('[data-s]').forEach(s=>s.hidden=s.dataset.s!==b.dataset.t)};
+
+/* SECCIONES */
+const TIPOS={gallery:'Galería de obras',featured:'Proyecto destacado + fotos',events:'Agenda de eventos'};
+const RES=['inicio','contacto','ilustracion','diseno','colectivo','eventos'];
+const slug=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const secs=()=>get('sections');
+const saveSecs=l=>{C.sections=l;setDoc(doc(db,...P('site','sections')),{list:l}).catch(fail);return true};
+const newId=(t,l)=>{const b=slug(t)||'seccion';let id=b,n=2;while(l.some(x=>x.id===id)||RES.includes(id))id=b+'-'+n++;return id};
+const pSec=p=>p.section||'colectivo',eSec=v=>v.section||'eventos';
+let CUR=null;
+const curSec=()=>secs().find(x=>x.id===CUR);
+const catRow=(c={})=>`<div class="soc" style="grid-template-columns:1fr auto" data-id="${esc(c.id||'')}"><input placeholder="Nombre de la categoría (ej. Escuela)" value="${esc(c.name)}" data-n><button type="button" data-a="d-s" aria-label="Quitar">✕</button></div>`;
+
+function renderSecs(){const l=secs();$('#imp').hidden=l.length>0||SITE!=='portafolio';
+  $('#l-secs').innerHTML=l.length?l.map((x,i)=>`<div class="it" style="grid-template-columns:1fr auto"><div><b>${esc(x.title)}</b><small>${TIPOS[x.type]||x.type} · ${x.nav?'En el menú':'Fuera del menú'} · #${esc(x.id)}</small></div><span><button data-a="s-up" data-id="${esc(x.id)}" aria-label="Subir" ${i?'':'disabled'}>↑</button><button data-a="s-dn" data-id="${esc(x.id)}" aria-label="Bajar" ${i<l.length-1?'':'disabled'}>↓</button><button data-a="s-open" data-id="${esc(x.id)}">Abrir</button><button data-a="s-del" data-id="${esc(x.id)}">Eliminar</button></span></div>`).join(''):'<p class="mut">Aún no hay secciones. Crea la primera arriba.</p>'}
+function showList(){CUR=null;$('#v-ed').hidden=true;$('#v-list').hidden=false;renderSecs()}
+$('#back').onclick=showList;
+$('#f-new').onsubmit=e=>{e.preventDefault();const l=secs(),title=$('#n-title').value.trim(),type=$('#n-type').value;
+  const x={id:newId(title,l),type,title,nav:title,eyebrow:$('#n-eb').value.trim(),desc:$('#n-desc').value.trim()};
+  if(type==='gallery')x.cats=[];if(type==='featured')x.feat={title:'',tag:'',cover:'',desc:'',link:''};
+  l.push(x);saveSecs(l);$('#f-new').reset();toast('Sección creada: ahora agrega su contenido');openSec(x.id)};
+$('#imp').onclick=()=>{const c=get('collective'),cats=[{id:'redes',name:'Subido a redes'},{id:'escuela',name:'Escuela'},{id:'comisiones',name:'Comisiones propias'}];
+  saveSecs([
+    {id:'ilustracion',type:'gallery',title:'Ilustración',nav:'Ilustración',eyebrow:'Obra seleccionada',desc:'Narrativas visuales, personajes y atmósferas que habitan entre lo onírico y lo inquietante.',cats},
+    {id:'diseno',type:'gallery',title:'Diseño gráfico',nav:'Diseño',eyebrow:'Sistemas visuales',desc:'Identidades, piezas editoriales y campañas creadas con intención, carácter y una mirada experimental.',cats:structuredClone(cats)},
+    {id:'colectivo',type:'featured',title:'Colectivo Umbra',nav:'Colectivo',eyebrow:'Comunidad creativa',desc:'Grupo estudiantil interdisciplinario que abre espacios para crear, exhibir y compartir ideas fuera del aula.',feat:{title:c.title||'',tag:c.tag||'',cover:c.cover||'',desc:c.desc||'',link:'colectivo.html'}},
+    {id:'eventos',type:'events',title:'Próximos eventos',nav:'',eyebrow:'Agenda',desc:''}]);
+  renderSecs();toast('Secciones anteriores importadas')};
+
+function openSec(id){CUR=id;const x=curSec();if(!x)return;
+  $('#v-list').hidden=true;$('#v-ed').hidden=false;
+  $('#ed-ty').textContent=TIPOS[x.type];$('#ed-t').textContent=x.title;
+  $('#s-title').value=x.title;$('#s-nav').value=x.nav||'';$('#s-eb').value=x.eyebrow||'';$('#s-desc').value=x.desc||'';
+  $('#s-cats-w').hidden=x.type!=='gallery';$('#s-cats').innerHTML=(x.cats||[]).map(catRow).join('');
+  for(const t of ['gallery','featured','events'])$('#ed-'+t).hidden=x.type!==t;
+  if(x.type==='gallery'){resetObra();renderObras()}
+  if(x.type==='featured')renderCol();
+  if(x.type==='events'){resetEv();renderEv()}
+  scrollTo({top:0})}
+$('#f-sec').onsubmit=e=>{e.preventDefault();const l=secs(),x=l.find(y=>y.id===CUR);
+  x.title=$('#s-title').value.trim();x.nav=$('#s-nav').value.trim();x.eyebrow=$('#s-eb').value.trim();x.desc=$('#s-desc').value.trim();
+  if(x.type==='gallery'){const rows=[...document.querySelectorAll('#s-cats .soc')],used=new Set([...rows.map(r=>r.dataset.id).filter(Boolean),...(x.cats||[]).map(c=>c.id)]);
+    x.cats=rows.map(r=>{const n=r.querySelector('[data-n]').value.trim();if(!n)return null;let id=r.dataset.id;
+      if(!id){const b=slug(n)||'cat';id=b;let k=2;while(used.has(id))id=b+'-'+k++;used.add(id)}return{id,name:n}}).filter(Boolean)}
+  saveSecs(l);$('#ed-t').textContent=x.title;
+  if(x.type==='gallery'){$('#s-cats').innerHTML=x.cats.map(catRow).join('');renderObras()}
+  toast('Sección guardada')};
+
+/* Galería de obras */
+let eo=null;
+function renderObras(){const x=curSec(),cats=x.cats||[],l=get('works').filter(w=>w.section===CUR).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  $('#o-cat-w').hidden=!cats.length;$('#o-cat').innerHTML=cats.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  $('#l-obras').innerHTML=l.length?l.map(w=>`<div class="it"><img src="${w.img}" alt=""><div><b>${esc(w.title)}</b><small>${esc(cats.find(c=>c.id===w.cat)?.name||'Sin categoría')} · ${esc(w.year||'')}</small></div><span><button data-a="e-o" data-id="${w.id}">Editar</button><button data-a="d-o" data-id="${w.id}">Eliminar</button></span></div>`).join(''):'<p class="mut">Aún no has subido obras a esta sección. Usa el formulario de arriba.</p>'}
+function resetObra(){eo=null;pend.o=null;$('#f-obra').reset();showPrev($('#o-prev'));$('#o-cancel').hidden=true}
+bindImg($('#o-file'),$('#o-prev'),'o');
+$('#o-cancel').onclick=resetObra;
+$('#f-obra').onsubmit=e=>{e.preventDefault();const img=pend.o||eo?.img;if(!img)return toast('Primero elige una imagen');
+  if(upsert('works',{id:eo?.id||crypto.randomUUID(),ts:eo?.ts||Date.now(),section:CUR,cat:$('#o-cat').value||'',title:$('#o-title').value.trim(),year:$('#o-year').value,desc:$('#o-desc').value.trim(),img})){toast(eo?'Obra actualizada':'Obra guardada');resetObra();renderObras()}};
+
+/* Proyecto destacado y fotos */
+function renderCol(){const x=curSec(),c=x.feat||{};$('#c-title').value=c.title||'';$('#c-tag').value=c.tag||'';$('#c-desc').value=c.desc||'';$('#c-link').value=c.link||'';showPrev($('#c-prev'),c.cover);pend.c=null;
+  const p=get('photos').filter(y=>pSec(y)===CUR);$('#l-fotos').innerHTML=p.length?p.map(y=>`<div><img src="${y.img}" alt=""><button data-a="d-p" data-id="${y.id}" aria-label="Eliminar">✕</button></div>`).join(''):'<p class="mut">Aún no hay fotos en la galería.</p>'}
+bindImg($('#c-file'),$('#c-prev'),'c');
+$('#f-col').onsubmit=e=>{e.preventDefault();const l=secs(),x=l.find(y=>y.id===CUR);
+  x.feat={title:$('#c-title').value.trim(),tag:$('#c-tag').value.trim(),desc:$('#c-desc').value.trim(),link:$('#c-link').value.trim(),cover:pend.c||x.feat?.cover||''};
+  if(saveSecs(l)){pend.c=null;toast('Proyecto guardado')}};
+$('#p-file').onchange=async e=>{const fs=[...e.target.files];if(!fs.length)return;toast('Subiendo '+fs.length+' foto(s)…');const x=curSec();
+  try{for(const f of fs)if(!upsert('photos',{id:crypto.randomUUID(),ts:Date.now(),section:CUR,title:x.feat?.title||x.title,year:new Date().getFullYear(),cat:'',desc:'',img:await upload(f)}))break;toast('Fotos agregadas')}catch(er){toast('Error: '+er.message)}
+  e.target.value='';renderCol()};
+
+/* Eventos */
+let ee=null;
+const sortEv=l=>l.sort((a,b)=>new Date(a.year,a.month-1,a.day)-new Date(b.year,b.month-1,b.day));
+function renderEv(){const l=sortEv(get('events').filter(v=>eSec(v)===CUR));
+  $('#l-ev').innerHTML=l.length?l.map(v=>`<div class="it" style="grid-template-columns:64px 1fr auto"><div class="ph" style="display:grid;place-items:center;font-weight:600">${v.day}<br>${MES[v.month-1].slice(0,3)}</div><div><b>${esc(v.title)}</b><small>${esc(v.place)} · ${esc(v.time)} · ${esc(v.tag)} · ${v.year}</small></div><span><button data-a="e-e" data-id="${v.id}">Editar</button><button data-a="d-e" data-id="${v.id}">Eliminar</button></span></div>`).join(''):'<p class="mut">No hay eventos en esta sección. Agrega el primero arriba.</p>'}
+function resetEv(){ee=null;$('#f-ev').reset();$('#e-year').value=new Date().getFullYear();$('#e-cancel').hidden=true}
+$('#e-cancel').onclick=resetEv;
+$('#f-ev').onsubmit=e=>{e.preventDefault();
+  const it={id:ee?.id||crypto.randomUUID(),section:CUR,day:+$('#e-day').value,month:+$('#e-mon').value,year:+$('#e-year').value,title:$('#e-title').value.trim(),place:$('#e-place').value.trim(),time:$('#e-time').value,desc:$('#e-desc').value.trim(),tag:$('#e-tag').value,link:$('#e-link').value.trim()};
+  if(upsert('events',it)){set('events',sortEv(get('events')));toast(ee?'Evento actualizado':'Evento guardado');resetEv();renderEv()}};
+
+/* PERFIL Y REDES */
+const socRow=(s={})=>`<div class="soc"><input placeholder="Nombre (Instagram)" value="${esc(s.name)}" data-n><input placeholder="https://…" value="${esc(s.url)}" data-u><button type="button" data-a="d-s" aria-label="Quitar">✕</button></div>`;
+function renderPer(){const p=get('profile');$('#f-wa').value=p.whatsapp;showPrev($('#f-prev'),p.photo);pend.f=null;
+  $('#socs').innerHTML=p.socials.map(socRow).join('');const c=cloud();$('#k-name').value=c.name||'';$('#k-preset').value=c.preset||''}
+/* Recortador circular */
+function cropper(file){return new Promise((ok,no)=>{const img=new Image();
+  img.onload=()=>{const M=$('#crop'),cv=$('#crop-cv'),ctx=cv.getContext('2d'),S=320,z=$('#crop-z');
+    const min=Math.max(S/img.width,S/img.height);let sc=min,x=(S-img.width*sc)/2,y=(S-img.height*sc)/2,drag=null;
+    z.min=1;z.max=4;z.step=.01;z.value=1;
+    const draw=()=>{x=Math.min(0,Math.max(S-img.width*sc,x));y=Math.min(0,Math.max(S-img.height*sc,y));
+      ctx.fillStyle='#08070C';ctx.fillRect(0,0,S,S);ctx.drawImage(img,x,y,img.width*sc,img.height*sc)};
+    draw();M.hidden=false;
+    z.oninput=()=>{const cx=(S/2-x)/sc,cy=(S/2-y)/sc;sc=min*z.value;x=S/2-cx*sc;y=S/2-cy*sc;draw()};
+    cv.onpointerdown=e=>{drag={px:e.clientX,py:e.clientY,x,y};cv.setPointerCapture(e.pointerId)};
+    cv.onpointermove=e=>{if(!drag)return;x=drag.x+e.clientX-drag.px;y=drag.y+e.clientY-drag.py;draw()};
+    cv.onpointerup=()=>drag=null;
+    $('#crop-ok').onclick=()=>{const o=document.createElement('canvas'),k=800/S;o.width=o.height=800;
+      o.getContext('2d').drawImage(img,x*k,y*k,img.width*sc*k,img.height*sc*k);M.hidden=true;
+      o.toBlob(b=>ok(new File([b],'perfil.jpg',{type:'image/jpeg'})),'image/jpeg',.88)};
+    $('#crop-no').onclick=()=>{M.hidden=true;no(new Error('cancelado'))}};
+  img.onerror=()=>no(new Error('Imagen no válida'));img.src=URL.createObjectURL(file)})}
+$('#f-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{const c=await cropper(f);toast('Subiendo imagen…');pend.f=await upload(c);showPrev($('#f-prev'),pend.f);toast('Foto lista: no olvides Guardar perfil')}
+  catch(er){if(er.message!=='cancelado')toast('Error: '+er.message)}
+  e.target.value=''};
+$('#f-per').onsubmit=async e=>{e.preventDefault();const p=get('profile');
+  const socials=[...document.querySelectorAll('#socs .soc')].map(r=>({id:crypto.randomUUID(),name:r.querySelector('[data-n]').value.trim(),url:r.querySelector('[data-u]').value.trim()})).filter(s=>s.name&&s.url);
+  const d={whatsapp:$('#f-wa').value.replace(/\D/g,''),photo:pend.f||p.photo,socials};C.profile=d;
+  try{await setDoc(doc(db,...P('site','profile')),d);toast('Perfil guardado en Firestore '+(d.photo?'(con foto)':'(SIN foto)'))}
+  catch(er){console.error(er);toast('Error al guardar: '+(er.code||er.message))}};
+$('#f-cloud').onsubmit=e=>{e.preventDefault();set('cloud',{name:$('#k-name').value.trim(),preset:$('#k-preset').value.trim()});toast('Cloudinary guardado')};
+
+/* ACCIONES */
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id,up=()=>scrollTo({top:0,behavior:'smooth'});
+  if(a==='s-open')openSec(id);
+  if(a==='s-up'||a==='s-dn'){const l=secs(),i=l.findIndex(x=>x.id===id),j=a==='s-up'?i-1:i+1;if(i>=0&&j>=0&&j<l.length){[l[i],l[j]]=[l[j],l[i]];saveSecs(l);renderSecs()}}
+  if(a==='s-del'&&confirm('¿Eliminar esta sección con todo su contenido (obras, fotos o eventos)? No se puede deshacer.')){
+    get('works').filter(w=>w.section===id).forEach(w=>del('works',w.id));
+    get('photos').filter(p=>pSec(p)===id).forEach(p=>del('photos',p.id));
+    get('events').filter(v=>eSec(v)===id).forEach(v=>del('events',v.id));
+    saveSecs(secs().filter(x=>x.id!==id));renderSecs();toast('Sección eliminada')}
+  if(a==='e-o'){const w=get('works').find(x=>x.id===id);eo=w;pend.o=null;$('#o-cat').value=w.cat;$('#o-title').value=w.title;$('#o-year').value=w.year;$('#o-desc').value=w.desc;showPrev($('#o-prev'),w.img);$('#o-cancel').hidden=false;up()}
+  if(a==='d-o'&&confirm('¿Eliminar esta obra?')){del('works',id);renderObras();toast('Obra eliminada')}
+  if(a==='d-p'&&confirm('¿Eliminar esta foto?')){del('photos',id);renderCol()}
+  if(a==='e-e'){const v=get('events').find(x=>x.id===id);ee=v;$('#e-day').value=v.day;$('#e-mon').value=v.month;$('#e-year').value=v.year;$('#e-time').value=v.time;$('#e-title').value=v.title;$('#e-place').value=v.place;$('#e-tag').value=v.tag;$('#e-link').value=v.link;$('#e-desc').value=v.desc;$('#e-cancel').hidden=false;up()}
+  if(a==='d-e'&&confirm('¿Eliminar este evento?')){del('events',id);renderEv();toast('Evento eliminado')}
+  if(a==='add-s')$('#socs').insertAdjacentHTML('beforeend',socRow());
+  if(a==='add-c')$('#s-cats').insertAdjacentHTML('beforeend',catRow());
+  if(a==='d-s')b.closest('.soc').remove()});
+
+function renderAll(){renderAcc();showList();renderPer()}
+/* Selector de sitio: el mismo panel edita el portafolio y KAPTA */
+const updSite=()=>{$('#ver').href=SITES[SITE].url;$('#site-sel').value=SITE};
+$('#site-sel').onchange=async e=>{SITE=e.target.value;localStorage.setItem('av_site',SITE);updSite();toast('Cargando '+SITES[SITE].name+'…');
+  try{await loadAll();renderAll();toast('Editando: '+SITES[SITE].name)}catch(er){toast('Error: '+(er.code||er.message))}};
+updSite();
+
+</script>
+</body>
+</html>
