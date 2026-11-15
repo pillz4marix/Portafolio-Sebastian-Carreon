@@ -127,9 +127,7 @@ section{padding:clamp(4rem,9vw,8rem) var(--pad);border-top:var(--ln)}
 .feat-p p{color:var(--tx2)}
 .lnk{align-self:flex-start;font-size:12px;letter-spacing:.16em;text-transform:uppercase;border-bottom:1px solid var(--tx);padding-bottom:.3rem;transition:.25s}
 .lnk:hover{color:var(--ac);border-color:var(--ac)}
-.pastlnk{display:inline-block;margin-top:1.8rem}
 .nav .pastnav{color:var(--ac)}.nav .pastnav:hover{color:var(--tx)}
-.fmid{text-align:center}.fmid a{display:block;margin-top:.5rem;color:var(--ac)}.fmid a[hidden]{display:none}.fmid a:hover{text-decoration:underline}
 
 /* EVENTOS */
 .ev{display:grid;grid-template-columns:35fr 65fr;gap:3rem}
@@ -222,7 +220,7 @@ footer button:hover{color:var(--ac)}
 
 <footer>
   <span>© <span id="yr"></span> Sebastián Carreón</span>
-  <span class="fmid">Ilustración · Diseño · Dirección de arte<a class="pastf" id="pastf" href="eventos-pasados.html" hidden>Eventos pasados ↗</a></span>
+  <span>Ilustración · Diseño · Dirección de arte</span>
   <button id="top">Volver arriba ↑</button>
 </footer>
 
@@ -377,11 +375,10 @@ function buildSection(s, i, all){
     if (items.length) gallery(el, items);
   } else if (s.type === 'events'){
     const up = all.events.filter(e => (e.section || 'eventos') === s.id && new Date(e.year, e.month-1, e.day+1) >= new Date());
-    const nPast = all.events.filter(e => new Date(e.year, e.month-1, e.day+1) < new Date()).length;
     const row = e => { const inner = `<div class="day">${String(e.day).padStart(2,'0')}<span class="mon">${MESES[e.month-1]}</span></div>
         <div><h3>${esc(e.title)}</h3><p>${esc([e.place, e.time].filter(Boolean).join(' · '))}</p>${e.desc ? `<p style="margin-top:.4rem">${esc(e.desc)}</p>` : ''}</div>`;
       return e.link ? `<a class="row" href="${esc(url(e.link))}" target="_blank" rel="noopener">${inner}<span class="circ" aria-label="Ver evento">↗</span></a>` : `<div class="row">${inner}<span></span></div>`; };
-    el.innerHTML = `<div class="ev"><div><p class="eyebrow">${esc(s.eyebrow || '')}</p><h2 class="display">${esc(s.title)}</h2>${s.desc ? `<p class="evd">${esc(s.desc)}</p>` : ''}${nPast ? `<a class="lnk pastlnk" href="eventos-pasados.html">Ver eventos pasados · ${nPast} ↗</a>` : ''}</div>
+    el.innerHTML = `<div class="ev"><div><p class="eyebrow">${esc(s.eyebrow || '')}</p><h2 class="display">${esc(s.title)}</h2>${s.desc ? `<p class="evd">${esc(s.desc)}</p>` : ''}</div>
       <div>${up.length ? up.map(row).join('') : '<p class="empty">Próximamente, nuevas fechas.</p>'}</div></div>`;
   } else return null;
   return el;
@@ -391,7 +388,6 @@ function buildSection(s, i, all){
 async function init(){
   const [works, photos, events, profile, secs] = await Promise.all([getAll('works'), getAll('photos'), getAll('events'), getProfile(), getSections()]);
   const hasPast = events.some(e => new Date(e.year, e.month-1, e.day+1) < new Date());
-  $('#pastf').hidden = !hasPast;
 
   // Hero
   if (profile.photo) $('#portrait').src = profile.photo;
