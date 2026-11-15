@@ -391,7 +391,7 @@ async function init(){
   if (profile.photo) $('#portrait').src = profile.photo;
   else $('#portrait').replaceWith(Object.assign(document.createElement('div'),{className:'portrait ph'}));
   $('#social').innerHTML = profile.socials.map(s => {
-    const k = s.name.toLowerCase(); const ico = ICONS[k] || ICONS.default;
+    const ico = iconFor(s);
     return `<a href="${esc(s.url)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true">${ico}</svg>${esc(s.name)}</a>`; }).join('');
   const msg = encodeURIComponent('Hola Sebastián, vi tu portafolio y me gustaría cotizar un proyecto.');
   $('#hablemos').href = `https://wa.me/${profile.whatsapp}?text=${msg}`;
