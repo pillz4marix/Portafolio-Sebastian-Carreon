@@ -112,7 +112,7 @@ button:disabled{opacity:.35;cursor:default;pointer-events:none}
       </div></form>
       <div class="list" id="l-secs"></div>
       <div class="btns" style="margin-top:1rem"><button type="button" id="imp" hidden>Importar secciones anteriores</button></div>
-      <p class="mut" style="margin-top:1rem;font-size:13px">El orden de esta lista es el orden en que aparecen en el sitio, debajo del inicio y antes de Contacto. Al importar las secciones anteriores se recuperan Ilustración, Diseño gráfico, Colectivo Umbra y Próximos eventos con todo su contenido.</p>
+      <p class="mut" style="margin-top:1rem;font-size:13px">El orden de esta lista es el orden en que aparecen en el sitio, debajo del inicio y antes de Contacto.</p>
     </div>
 
     <!-- Editor de una sección -->
@@ -238,7 +238,6 @@ const P=(...s)=>SITE==="portafolio"?s:["sites",SITE,...s]; // portafolio = rutas
 
 /* CAPA DE DATOS */
 const DEF={works:[],photos:[],sections:[],cloud:{},
- collective:{title:'Materia Oscura',tag:'Exhibición colectiva 2026',cover:'',desc:'Una muestra colectiva sobre identidad, memoria y transformación con más de 30 estudiantes participantes.'},
  events:[],
  profile:{whatsapp:'526145472043',photo:'',socials:[{id:'s1',name:'Instagram',url:'https://instagram.com/'},{id:'s2',name:'Behance',url:'https://behance.net/'},{id:'s3',name:'TikTok',url:'https://tiktok.com/'},{id:'s4',name:'Pinterest',url:'https://pinterest.com/'},{id:'s5',name:'ArtStation',url:'https://artstation.com/'}]}};
 const get=k=>structuredClone(C[k]??DEF[k]);
@@ -246,11 +245,11 @@ const fail=e=>toast('No se pudo guardar: '+(e.code||e.message));
 const set=(k,v)=>{C[k]=v;if(!Array.isArray(v))setDoc(doc(db,...(k==='cloud'?['site','cloud']:P('site',k))),v).catch(fail);return true};
 const upsert=(k,it)=>{const l=get(k),i=l.findIndex(x=>x.id===it.id);i>=0?l[i]=it:l.push(it);C[k]=l;setDoc(doc(db,...P(k,it.id)),it).catch(fail);return true};
 const del=(k,id)=>{C[k]=get(k).filter(x=>x.id!==id);deleteDoc(doc(db,...P(k,id))).catch(fail);return true};
-const dflt=k=>SITE==='portafolio'?DEF[k]:k==='profile'?{whatsapp:'',photo:'',socials:[]}:k==='collective'?{title:'',tag:'',cover:'',desc:''}:DEF[k];
+const dflt=k=>SITE==='portafolio'?DEF[k]:k==='profile'?{whatsapp:'',photo:'',socials:[]}:DEF[k];
 async function loadAdmins(){C.admins=(await getDocs(collection(db,'admins'))).docs.map(d=>({email:d.id,...d.data()}))}
 async function loadAll(){
   for(const k of ['works','photos','events'])C[k]=(await getDocs(collection(db,...P(k)))).docs.map(d=>d.data());
-  for(const k of ['collective','profile']){const s=await getDoc(doc(db,...(k==='cloud'?['site','cloud']:P('site',k))));C[k]=s.exists()?s.data():structuredClone(dflt(k))}
+  for(const k of ['profile']){const s=await getDoc(doc(db,...(k==='cloud'?['site','cloud']:P('site',k))));C[k]=s.exists()?s.data():structuredClone(dflt(k))}
   try{const sc=await getDoc(doc(db,...P('site','sections')));C.sections=sc.exists()?sc.data().list||[]:[]}
   catch(e){console.error(e);C.sections=[];setTimeout(()=>toast('No se pudieron leer las secciones ('+(e.code||e.message)+'). Revisa las reglas de Firestore.'),800)}
   await loadAdmins()}
@@ -300,7 +299,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a="d
   try{await deleteDoc(doc(db,'admins',b.dataset.id));await loadAdmins();renderAcc();toast('Acceso eliminado')}catch(er){toast('Error: '+(er.code||er.message))}});
 
 /* RESPALDO */
-$('#backup').onclick=()=>{const d={fecha:new Date().toISOString(),works:C.works,photos:C.photos,events:C.events,sections:C.sections,collective:C.collective,profile:C.profile};
+$('#backup').onclick=()=>{const d={fecha:new Date().toISOString(),works:C.works,photos:C.photos,events:C.events,sections:C.sections,profile:C.profile};
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));
   a.download='respaldo-'+SITE+'-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
 
@@ -311,12 +310,12 @@ $('#tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;
 
 /* SECCIONES */
 const TIPOS={gallery:'Galería de obras',featured:'Proyecto destacado + fotos',events:'Agenda de eventos'};
-const RES=['inicio','contacto','ilustracion','diseno','colectivo','eventos'];
+const RES=['inicio','contacto','ilustracion','diseno','eventos'];
 const slug=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 const secs=()=>get('sections');
 const saveSecs=l=>{C.sections=l;setDoc(doc(db,...P('site','sections')),{list:l}).catch(fail);return true};
 const newId=(t,l)=>{const b=slug(t)||'seccion';let id=b,n=2;while(l.some(x=>x.id===id)||RES.includes(id))id=b+'-'+n++;return id};
-const pSec=p=>p.section||'colectivo',eSec=v=>v.section||'eventos';
+const pSec=p=>p.section,eSec=v=>v.section||'eventos';
 let CUR=null;
 const curSec=()=>secs().find(x=>x.id===CUR);
 const catRow=(c={})=>`<div class="soc" style="grid-template-columns:1fr auto" data-id="${esc(c.id||'')}"><input placeholder="Nombre de la categoría (ej. Escuela)" value="${esc(c.name)}" data-n><button type="button" data-a="d-s" aria-label="Quitar">✕</button></div>`;
@@ -329,11 +328,10 @@ $('#f-new').onsubmit=e=>{e.preventDefault();const l=secs(),title=$('#n-title').v
   const x={id:newId(title,l),type,title,nav:title,eyebrow:$('#n-eb').value.trim(),desc:$('#n-desc').value.trim()};
   if(type==='gallery')x.cats=[];if(type==='featured')x.feat={title:'',tag:'',cover:'',desc:'',link:''};
   l.push(x);saveSecs(l);$('#f-new').reset();toast('Sección creada: ahora agrega su contenido');openSec(x.id)};
-$('#imp').onclick=()=>{const c=get('collective'),cats=[{id:'redes',name:'Subido a redes'},{id:'escuela',name:'Escuela'},{id:'comisiones',name:'Comisiones propias'}];
+$('#imp').onclick=()=>{const cats=[{id:'redes',name:'Subido a redes'},{id:'escuela',name:'Escuela'},{id:'comisiones',name:'Comisiones propias'}];
   saveSecs([
     {id:'ilustracion',type:'gallery',title:'Ilustración',nav:'Ilustración',eyebrow:'Obra seleccionada',desc:'Narrativas visuales, personajes y atmósferas que habitan entre lo onírico y lo inquietante.',cats},
     {id:'diseno',type:'gallery',title:'Diseño gráfico',nav:'Diseño',eyebrow:'Sistemas visuales',desc:'Identidades, piezas editoriales y campañas creadas con intención, carácter y una mirada experimental.',cats:structuredClone(cats)},
-    {id:'colectivo',type:'featured',title:'Colectivo Umbra',nav:'Colectivo',eyebrow:'Comunidad creativa',desc:'Grupo estudiantil interdisciplinario que abre espacios para crear, exhibir y compartir ideas fuera del aula.',feat:{title:c.title||'',tag:c.tag||'',cover:c.cover||'',desc:c.desc||'',link:'colectivo.html'}},
     {id:'eventos',type:'events',title:'Próximos eventos',nav:'',eyebrow:'Agenda',desc:''}]);
   renderSecs();toast('Secciones anteriores importadas')};
 
